@@ -1,11 +1,11 @@
 {
-  "type": "Plugin",
-  "name": "SteelSeries Sonar Plugin",
-  "author": "cheath94",
-  "repository": "https://github.com/cheath94/Macro-Deck-SteelSeriesSonar.Plugin",
-  "packageId": "cheath94.SteelSeriesSonar",
-  "version": "1.0.0",
-  "target-plugin-api-version": 41,
-  "target-macro-deck-version": "2.15.0",
-  "dll": "SteelSeriesSonar.Plugin.dll"
+  "type" : "Plugin",
+  "name" : "SteelSeries Sonar Plugin",
+  "author" : "cheath94",
+  "repository" : "https://github.com/cheath94/Macro-Deck-SteelSeriesSonar.Plugin",
+  "packageId" : "cheath94.SteelSeriesSonar",
+  "version" : "1.0.0",
+  "target-plugin-api-version" : 41,
+  "target-macro-deck-version" : "2.15.0",
+  "dll" : "SteelSeriesSonar.Plugin.dll"
 }
