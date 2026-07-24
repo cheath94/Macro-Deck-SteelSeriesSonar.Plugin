@@ -31,6 +31,12 @@ channels and react to Sonar's current state using Macro Deck variables.
 
 ## Screenshots
 
+![Example of Buttons](docs/images/Button_Example.png)
+![Adjusting Volume Configuration](docs/images/Adjust_Volume_Example.png)
+![Set Specific Volume Configuration](docs/images/Set_Volume_Example.png)
+![Toggle Mute Configuration](docs/images/Toggle_Mute_Example.png)
+![Example of Variables](docs/images/Variable_Example.png)
+
 ## Requirements
 
 - Windows 11
