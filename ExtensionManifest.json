@@ -6,6 +6,6 @@
   "packageId": "cheath94.SteelSeriesSonar",
   "version": "1.0.0",
   "target-plugin-api-version": 41,
-  "target-macro-desk-version": "2.15.0",
+  "target-macro-deck-version": "2.15.0",
   "dll": "SteelSeriesSonar.Plugin.dll"
 }
