@@ -9,7 +9,7 @@
     <AssemblyName>SteelSeriesSonar.Plugin</AssemblyName>
     <RootNamespace>SteelSeriesSonar.Plugin</RootNamespace>
     <LangVersion>14.0</LangVersion>
-    <version>1.0.0</version>
+    <Version>1.0.0</Version>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
