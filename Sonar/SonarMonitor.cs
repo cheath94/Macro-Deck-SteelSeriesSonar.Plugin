@@ -1,0 +1,144 @@
+using SteelSeriesSonar.Plugin.Models;
+using SteelSeriesSonar.Plugin.Variables;
+using SuchByte.MacroDeck.Logging;
+using SuchByte.MacroDeck.Plugins;
+
+namespace SteelSeriesSonar.Plugin.Sonar;
+
+public sealed class SonarMonitor : IDisposable
+{
+    private static readonly TimeSpan PollInterval =
+        TimeSpan.FromSeconds(1);
+
+    private readonly SonarClient sonar;
+    private readonly SonarVariableManager variables;
+    private readonly MacroDeckPlugin plugin;
+
+    private System.Threading.Timer? timer;
+    private int pollInProgress;
+    private bool disposed;
+
+    public SonarMonitor(
+        MacroDeckPlugin plugin,
+        SonarClient sonar,
+        SonarVariableManager variables)
+    {
+        this.plugin = plugin;
+        this.sonar = sonar;
+        this.variables = variables;
+    }
+
+    public void Start()
+    {
+        ObjectDisposedException.ThrowIf(
+            disposed,
+            this);
+
+        if (timer is not null)
+        {
+            return;
+        }
+
+        MacroDeckLogger.Information(
+            plugin,
+            "{0}",
+            "Starting Sonar variable monitor");
+
+        timer =
+            new System.Threading.Timer(
+                Monitor,
+                null,
+                PollInterval,
+                PollInterval);
+    }
+
+    private void Monitor(
+        object? state)
+    {
+        _ = state;
+
+        if (disposed)
+        {
+            return;
+        }
+
+        if (Interlocked.Exchange(
+                ref pollInProgress,
+                1) != 0)
+        {
+            MacroDeckLogger.Debug(
+                plugin,
+                "{0}",
+                "Skipping overlapping Sonar monitor poll");
+
+            return;
+        }
+
+        try
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            Dictionary<SonarChannel, SonarChannelState> states =
+                sonar.GetAllChannelStates();
+
+            if (states.Count == 0)
+            {
+                MacroDeckLogger.Debug(
+                    plugin,
+                    "{0}",
+                    "Sonar monitor received no channel states");
+
+                return;
+            }
+
+            variables.UpdateVariables(
+                states);
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "{0}",
+                "Sonar monitor poll completed");
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Sonar monitor failed: {0}",
+                ex);
+        }
+        finally
+        {
+            Volatile.Write(
+                ref pollInProgress,
+                0);
+        }
+    }
+
+    public void Dispose()
+    {
+        if (disposed)
+        {
+            return;
+        }
+
+        disposed = true;
+
+        MacroDeckLogger.Information(
+            plugin,
+            "{0}",
+            "Stopping Sonar variable monitor");
+
+        System.Threading.Timer? existingTimer =
+            Interlocked.Exchange(
+                ref timer,
+                null);
+
+        existingTimer?.Dispose();
+
+        GC.SuppressFinalize(
+            this);
+    }
+}

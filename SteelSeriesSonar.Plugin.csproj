@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+
+    <TargetFramework>net10.0-windows10.0.22000</TargetFramework>
+
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <UseWindowsForms>true</UseWindowsForms>
+
+    <AssemblyName>SteelSeriesSonar.Plugin</AssemblyName>
+    <RootNamespace>SteelSeriesSonar.Plugin</RootNamespace>
+
+    <LangVersion>14.0</LangVersion>
+
+    <Deterministic>true</Deterministic>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+  </PropertyGroup>
+
+
+  <ItemGroup>
+
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+
+    <PackageReference Include="SuchByte.MacroDeck" Version="2.15.0" PrivateAssets="all" />
+
+  </ItemGroup>
+
+
+  <ItemGroup>
+
+    <None Update="ExtensionManifest.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+
+  </ItemGroup>
+
+
+</Project>
