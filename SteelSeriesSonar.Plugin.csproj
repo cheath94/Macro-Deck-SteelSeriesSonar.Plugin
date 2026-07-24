@@ -3,17 +3,13 @@
   <PropertyGroup>
 
     <TargetFramework>net10.0-windows10.0.22000</TargetFramework>
-
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <UseWindowsForms>true</UseWindowsForms>
-
     <AssemblyName>SteelSeriesSonar.Plugin</AssemblyName>
     <RootNamespace>SteelSeriesSonar.Plugin</RootNamespace>
-
     <LangVersion>14.0</LangVersion>
-
+    <version>1.0.0</version>
     <Deterministic>true</Deterministic>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
