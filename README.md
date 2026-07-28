@@ -25,6 +25,7 @@ channels and react to Sonar's current state using Macro Deck variables.
 - Set channel volume to a specific level
 - Increase or decrease channel volume
 - Mute, unmute, and toggle channel mute
+- Set, Increase, or Decrease the ChatMix
 - Automatic Macro Deck variable updates
 - Dynamic button state support for mute status
 - Uses the local SteelSeries Sonar API
