@@ -84,18 +84,34 @@ public sealed class SonarMonitor : IDisposable
             Dictionary<SonarChannel, SonarChannelState> states =
                 sonar.GetAllChannelStates();
 
-            if (states.Count == 0)
+            if (states.Count > 0)
+            {
+                variables.UpdateVariables(
+                    states);
+            }
+            else
             {
                 MacroDeckLogger.Debug(
                     plugin,
                     "{0}",
                     "Sonar monitor received no channel states");
-
-                return;
             }
 
-            variables.UpdateVariables(
-                states);
+            ChatMix? chatMix =
+                sonar.GetChatMix();
+
+            if (chatMix is not null)
+            {
+                variables.UpdateChatMixVariables(
+                    chatMix);
+            }
+            else
+            {
+                MacroDeckLogger.Debug(
+                    plugin,
+                    "{0}",
+                    "Sonar monitor received no ChatMix state");
+            }
 
             MacroDeckLogger.Debug(
                 plugin,
