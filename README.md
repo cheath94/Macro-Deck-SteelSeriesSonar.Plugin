@@ -58,23 +58,29 @@ channels and react to Sonar's current state using Macro Deck variables.
 | Mute Sonar Channel   | Mute a channel                |
 | Unmute Sonar Channel | Unmute a channel              |
 | Toggle Sonar Mute    | Toggle a mute state           |
+| Set ChatMix		   | Set ChatMix to specific level |
+| Adjust ChatMix	   | Adjust Chatmix Level %		   |
 	
 ## Available variables
 
 | Variables                  | Description                   |
 |----------------------------|-------------------------------|
-| sonar_master_volume        | Master volume (0.0 - 1.0)     |
+| sonar_master_volume        | Float (0.0 - 1.0)             |
 | sonar_master_muted         | Boolean                       |
-| sonar_game_volume          | Game volume (0.0 - 1.0)       |
+| sonar_game_volume          | Float (0.0 - 1.0)             |
 | sonar_game_muted           | Boolean                       |
-| sonar_chatrender_volume    | Chat volume (0.0 - 1.0)       |
+| sonar_chatrender_volume    | Float (0.0 - 1.0)             |
 | sonar_chatrender_muted     | Boolean                       |
-| sonar_chatcapture_volume   | Mic volume (0.0 - 1.0)        |
+| sonar_chatcapture_volume   | Float (0.0 - 1.0)             |
 | sonar_chatcapture_muted    | Boolean                       |
-| sonar_media_volume         | Media volume (0.0 - 1.0)      |
+| sonar_media_volume         | Float (0.0 - 1.0)             |
 | sonar_media_muted          | Boolean                       |
-| sonar_aux_volume           | Aux volume (0.0 - 1.0)        |
+| sonar_aux_volume           | Float (0.0 - 1.0)             |
 | sonar_aux_muted            | Boolean                       |
+| sonar_chatmix_balance      | Float (-1 - 1)                |
+| sonar_chatmix_percent      | String (1 - 100)			     |
+| sonar_chatmix_side         | String (balanced/game/chat)   |
+| sonar_chatmix_text         | String (percent + side)       |
 
 ## Supported Channels
 
