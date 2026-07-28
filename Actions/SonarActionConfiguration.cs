@@ -43,6 +43,53 @@ internal static class SonarActionConfiguration
         return true;
     }
 
+    public static bool TryReadDouble(
+        string? configuration,
+        string actionName,
+        string propertyName,
+        double minimum,
+        double maximum,
+        out double value)
+    {
+        value = default;
+
+        if (!TryParseConfiguration(
+                configuration,
+                actionName,
+                out JObject config))
+        {
+            return false;
+        }
+
+        string? rawValue =
+            config[propertyName]?
+                .ToString();
+
+        if (!double.TryParse(
+                rawValue,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out value))
+        {
+            MacroDeckLogger.Warning(
+                SteelSeriesSonarPlugin.Instance!,
+                "{0}: Invalid {1} value: {2}",
+                actionName,
+                propertyName,
+                rawValue ?? "<missing>");
+
+            return false;
+        }
+
+        value =
+            Math.Clamp(
+                value,
+                minimum,
+                maximum);
+
+        return true;
+    }
+
     public static bool TryReadChannelAndDouble(
         string? configuration,
         string actionName,
@@ -117,7 +164,8 @@ internal static class SonarActionConfiguration
     {
         config = new JObject();
 
-        if (string.IsNullOrWhiteSpace(configuration))
+        if (string.IsNullOrWhiteSpace(
+                configuration))
         {
             MacroDeckLogger.Warning(
                 SteelSeriesSonarPlugin.Instance!,

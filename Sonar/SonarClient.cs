@@ -144,6 +144,145 @@ public class SonarClient
         }
     }
 
+    public ChatMix? GetChatMix()
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return null;
+
+        try
+        {
+            string url =
+                $"{sonarAddress}/chatMix";
+
+            string json =
+                httpClient
+                    .GetStringAsync(url)
+                    .GetAwaiter()
+                    .GetResult();
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "ChatMix JSON: {0}",
+                json);
+
+            return JsonSerializer.Deserialize<ChatMix>(
+                json,
+                JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to read ChatMix: {0}",
+                ex);
+
+            return null;
+        }
+    }
+
+    public bool SetChatMix(
+        double balance)
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return false;
+
+        try
+        {
+            balance =
+                Math.Clamp(
+                    balance,
+                    -1.0,
+                    1.0);
+
+            balance = 
+                Math.Round(
+                balance,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            if (Math.Abs(balance) < 0.005)
+            {
+                balance = 0.0;
+            }
+
+            string value =
+                balance.ToString(
+                    "0.00",
+                    CultureInfo.InvariantCulture);
+
+            string url =
+                $"{sonarAddress}/chatMix?balance={value}";
+
+            MacroDeckLogger.Information(
+                plugin,
+                "Setting ChatMix balance to {0}",
+                balance);
+
+            if (!SendPutRequest(url))
+                return false;
+
+            Thread.Sleep(
+                VolumeUpdateDelayMilliseconds);
+
+            ChatMix? verifiedChatMix =
+                GetChatMix();
+
+            if (verifiedChatMix is null)
+            {
+                MacroDeckLogger.Error(
+                    plugin,
+                    "{0}",
+                    "Unable to verify ChatMix balance");
+
+                return false;
+            }
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "ChatMix balance after change: {0}",
+                verifiedChatMix.Balance);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to set ChatMix balance: {0}",
+                ex);
+
+            return false;
+        }
+    }
+
+    public bool AdjustChatMix(
+        double amount)
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return false;
+
+        ChatMix? currentChatMix =
+            GetChatMix();
+
+        if (currentChatMix is null)
+            return false;
+
+        double newBalance =
+            Math.Clamp(
+                currentChatMix.Balance + amount,
+                -1.0,
+                1.0);
+
+        MacroDeckLogger.Information(
+            plugin,
+            "Adjusting ChatMix from {0:P0} to {1:P0}",
+            currentChatMix.Balance,
+            newBalance);
+
+        return SetChatMix(
+            newBalance);
+    }
+
     public double GetVolume(
         SonarChannel channel)
     {
