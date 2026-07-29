@@ -10,6 +10,9 @@ public class SonarClient
 {
     private const int VolumeUpdateDelayMilliseconds = 250;
 
+    private const double VolumeVerificationTolerance =
+        0.011;
+
     private static readonly JsonSerializerOptions JsonOptions =
         new()
         {
@@ -144,6 +147,82 @@ public class SonarClient
         }
     }
 
+    public StreamerVolumeSettings?
+        GetStreamerVolumeSettings()
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return null;
+
+        try
+        {
+            string url =
+                $"{sonarAddress}/volumeSettings/streamer";
+
+            string json =
+                httpClient
+                    .GetStringAsync(url)
+                    .GetAwaiter()
+                    .GetResult();
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "Streamer volume JSON: {0}",
+                json);
+
+            return JsonSerializer
+                .Deserialize<StreamerVolumeSettings>(
+                    json,
+                    JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to read Streamer volume settings: {0}",
+                ex);
+
+            return null;
+        }
+    }
+
+    public List<StreamRedirection>?
+        GetStreamRedirections()
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return null;
+
+        try
+        {
+            string url =
+                $"{sonarAddress}/streamRedirections";
+
+            string json =
+                httpClient
+                    .GetStringAsync(url)
+                    .GetAwaiter()
+                    .GetResult();
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "Stream redirection JSON: {0}",
+                json);
+
+            return JsonSerializer
+                .Deserialize<List<StreamRedirection>>(
+                    json,
+                    JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to read stream redirections: {0}",
+                ex);
+
+            return null;
+        }
+    }
+
     public ChatMix? GetChatMix()
     {
         if (string.IsNullOrWhiteSpace(sonarAddress))
@@ -152,7 +231,7 @@ public class SonarClient
         try
         {
             string url =
-                $"{sonarAddress}/chatMix";
+                $"{sonarAddress}/v1/chatMix";
 
             string json =
                 httpClient
@@ -194,11 +273,11 @@ public class SonarClient
                     -1.0,
                     1.0);
 
-            balance = 
+            balance =
                 Math.Round(
-                balance,
-                2,
-                MidpointRounding.AwayFromZero);
+                    balance,
+                    2,
+                    MidpointRounding.AwayFromZero);
 
             if (Math.Abs(balance) < 0.005)
             {
@@ -211,7 +290,7 @@ public class SonarClient
                     CultureInfo.InvariantCulture);
 
             string url =
-                $"{sonarAddress}/chatMix?balance={value}";
+                $"{sonarAddress}/v1/chatMix?balance={value}";
 
             MacroDeckLogger.Information(
                 plugin,
@@ -307,7 +386,7 @@ public class SonarClient
         VolumeSettings? settings =
             GetVolumeSettings();
 
-        if (settings == null)
+        if (settings is null)
             return null;
 
         return CreateChannelState(
@@ -324,7 +403,7 @@ public class SonarClient
         VolumeSettings? settings =
             GetVolumeSettings();
 
-        if (settings == null)
+        if (settings is null)
             return states;
 
         foreach (SonarChannel channel
@@ -339,77 +418,139 @@ public class SonarClient
         return states;
     }
 
+    public Dictionary<
+        (StreamerOutput Output, SonarChannel Channel),
+        ClassicVolume> GetAllStreamerChannelStates()
+    {
+        Dictionary<
+            (StreamerOutput Output, SonarChannel Channel),
+            ClassicVolume> states =
+                new();
+
+        StreamerVolumeSettings? settings =
+            GetStreamerVolumeSettings();
+
+        if (settings is null)
+        {
+            return states;
+        }
+
+        foreach (StreamerOutput output
+                 in Enum.GetValues<StreamerOutput>())
+        {
+            foreach (SonarChannel channel
+                     in Enum.GetValues<SonarChannel>())
+            {
+                states[(output, channel)] =
+                    GetStreamerVolumeState(
+                        settings,
+                        channel,
+                        output);
+            }
+        }
+
+        return states;
+    }
+
+    public ClassicVolume? GetStreamerVolumeState(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        StreamerVolumeSettings? settings =
+            GetStreamerVolumeSettings();
+
+        if (settings is null)
+            return null;
+
+        return GetStreamerVolumeState(
+            settings,
+            channel,
+            output);
+    }
+
+    public double GetStreamerVolume(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        ClassicVolume? state =
+            GetStreamerVolumeState(
+                channel,
+                output);
+
+        return state?.Volume ?? 0;
+    }
+
+    public bool GetStreamerMute(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        ClassicVolume? state =
+            GetStreamerVolumeState(
+                channel,
+                output);
+
+        return state?.Muted ?? false;
+    }
+
+    public bool? GetStreamRedirectionEnabled(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        if (!IsValidRedirectionChannel(channel))
+            return null;
+
+        List<StreamRedirection>? redirections =
+            GetStreamRedirections();
+
+        if (redirections is null)
+            return null;
+
+        string outputName =
+            GetStreamerOutputApiName(output);
+
+        string channelName =
+            SonarChannelHelper.GetApiName(channel);
+
+        StreamRedirection? redirection =
+            redirections.FirstOrDefault(
+                item =>
+                    string.Equals(
+                        item.Id,
+                        outputName,
+                        StringComparison.OrdinalIgnoreCase));
+
+        if (redirection is null)
+            return null;
+
+        StreamRedirectionStatus? status =
+            redirection.Statuses.FirstOrDefault(
+                item =>
+                    string.Equals(
+                        item.Role,
+                        channelName,
+                        StringComparison.OrdinalIgnoreCase));
+
+        return status?.IsEnabled;
+    }
+
     public bool SetVolume(
         SonarChannel channel,
         double volume)
     {
-        if (string.IsNullOrWhiteSpace(sonarAddress))
-            return false;
-
-        try
-        {
-            volume =
-                Math.Clamp(
-                    volume,
-                    0.0,
-                    1.0);
-
-            string value =
-                volume.ToString(
-                    "0.00",
-                    CultureInfo.InvariantCulture);
-
-            string apiChannel =
-                SonarChannelHelper.GetApiName(channel);
-
-            string url =
-                $"{sonarAddress}/volumeSettings/classic/" +
-                $"{apiChannel}/Volume/{value}";
-
-            MacroDeckLogger.Information(
-                plugin,
-                "Setting {0} volume to {1:P0}",
-                channel,
-                volume);
-
-            if (!SendPutRequest(url))
-                return false;
-
-            Thread.Sleep(
-                VolumeUpdateDelayMilliseconds);
-
-            double verifiedVolume =
-                GetVolume(channel);
-
-            MacroDeckLogger.Debug(
-                plugin,
-                "Volume after change: {0}",
-                verifiedVolume);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            MacroDeckLogger.Error(
-                plugin,
-                "Unable to set volume: {0}",
-                ex);
-
-            return false;
-        }
+        return SetVolumeInternal(
+            channel,
+            output: null,
+            volume);
     }
 
     public bool AdjustVolume(
         SonarChannel channel,
         double amount)
     {
-        if (string.IsNullOrWhiteSpace(sonarAddress))
-            return false;
-
         SonarChannelState? state =
             GetChannelState(channel);
 
-        if (state == null)
+        if (state is null)
             return false;
 
         double newVolume =
@@ -434,6 +575,316 @@ public class SonarClient
         SonarChannel channel,
         bool muted)
     {
+        return SetMuteInternal(
+            channel,
+            output: null,
+            muted);
+    }
+
+    public bool ToggleMute(
+        SonarChannel channel)
+    {
+        SonarChannelState? state =
+            GetChannelState(channel);
+
+        if (state is null)
+            return false;
+
+        MacroDeckLogger.Information(
+            plugin,
+            "{0} mute state: {1}",
+            channel,
+            state.Muted);
+
+        return SetMute(
+            channel,
+            !state.Muted);
+    }
+
+    public bool SetStreamerVolume(
+        SonarChannel channel,
+        StreamerOutput output,
+        double volume)
+    {
+        return SetVolumeInternal(
+            channel,
+            output,
+            volume);
+    }
+
+    public bool AdjustStreamerVolume(
+        SonarChannel channel,
+        StreamerOutput output,
+        double amount)
+    {
+        ClassicVolume? state =
+            GetStreamerVolumeState(
+                channel,
+                output);
+
+        if (state is null)
+            return false;
+
+        double newVolume =
+            Math.Clamp(
+                state.Volume + amount,
+                0.0,
+                1.0);
+
+        MacroDeckLogger.Information(
+            plugin,
+            "Adjusting {0} {1} volume from {2:P0} to {3:P0}",
+            channel,
+            output,
+            state.Volume,
+            newVolume);
+
+        return SetStreamerVolume(
+            channel,
+            output,
+            newVolume);
+    }
+
+    public bool SetStreamerMute(
+        SonarChannel channel,
+        StreamerOutput output,
+        bool muted)
+    {
+        return SetMuteInternal(
+            channel,
+            output,
+            muted);
+    }
+
+    public bool ToggleStreamerMute(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        ClassicVolume? state =
+            GetStreamerVolumeState(
+                channel,
+                output);
+
+        if (state is null)
+            return false;
+
+        MacroDeckLogger.Information(
+            plugin,
+            "{0} {1} mute state: {2}",
+            channel,
+            output,
+            state.Muted);
+
+        return SetStreamerMute(
+            channel,
+            output,
+            !state.Muted);
+    }
+
+    public bool SetStreamRedirectionEnabled(
+        SonarChannel channel,
+        StreamerOutput output,
+        bool enabled)
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return false;
+
+        if (!IsValidRedirectionChannel(channel))
+        {
+            MacroDeckLogger.Warning(
+                plugin,
+                "{0} is not a valid stream redirection channel.",
+                channel);
+
+            return false;
+        }
+
+        try
+        {
+            string apiChannel =
+                SonarChannelHelper.GetApiName(channel);
+
+            string apiOutput =
+                GetStreamerOutputApiName(output);
+
+            string value =
+                enabled
+                    ? "true"
+                    : "false";
+
+            string url =
+                $"{sonarAddress}/streamRedirections/" +
+                $"{apiOutput}/redirections/" +
+                $"{apiChannel}/isEnabled/{value}";
+
+            MacroDeckLogger.Information(
+                plugin,
+                "Setting {0} redirection for {1} to {2}",
+                channel,
+                output,
+                enabled);
+
+            if (!SendPutRequest(url))
+                return false;
+
+            Thread.Sleep(
+                VolumeUpdateDelayMilliseconds);
+
+            bool? verifiedEnabled =
+                GetStreamRedirectionEnabled(
+                    channel,
+                    output);
+
+            if (!verifiedEnabled.HasValue)
+            {
+                MacroDeckLogger.Warning(
+                    plugin,
+                    "Unable to verify {0} redirection for {1}.",
+                    channel,
+                    output);
+
+                return false;
+            }
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "{0} redirection for {1} after change: {2}",
+                channel,
+                output,
+                verifiedEnabled.Value);
+
+            return verifiedEnabled.Value == enabled;
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to set stream redirection: {0}",
+                ex);
+
+            return false;
+        }
+    }
+
+    public bool ToggleStreamRedirection(
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        bool? enabled =
+            GetStreamRedirectionEnabled(
+                channel,
+                output);
+
+        if (!enabled.HasValue)
+        {
+            MacroDeckLogger.Warning(
+                plugin,
+                "Unable to determine {0} redirection state for {1}.",
+                channel,
+                output);
+
+            return false;
+        }
+
+        return SetStreamRedirectionEnabled(
+            channel,
+            output,
+            !enabled.Value);
+    }
+
+    private bool SetVolumeInternal(
+        SonarChannel channel,
+        StreamerOutput? output,
+        double volume)
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+            return false;
+
+        try
+        {
+            volume =
+                Math.Clamp(
+                    volume,
+                    0.0,
+                    1.0);
+
+            string value =
+                volume.ToString(
+                    "0.00",
+                    CultureInfo.InvariantCulture);
+
+            string apiChannel =
+                SonarChannelHelper.GetApiName(channel);
+
+            string url =
+                output.HasValue
+                    ? BuildStreamerVolumeUrl(
+                        apiChannel,
+                        output.Value,
+                        value)
+                    : BuildClassicVolumeUrl(
+                        apiChannel,
+                        value);
+
+            if (output.HasValue)
+            {
+                MacroDeckLogger.Information(
+                    plugin,
+                    "Setting {0} {1} volume to {2:P0}",
+                    channel,
+                    output.Value,
+                    volume);
+            }
+            else
+            {
+                MacroDeckLogger.Information(
+                    plugin,
+                    "Setting {0} volume to {1:P0}",
+                    channel,
+                    volume);
+            }
+
+            if (!SendPutRequest(url))
+                return false;
+
+            Thread.Sleep(
+                VolumeUpdateDelayMilliseconds);
+
+            double verifiedVolume =
+                output.HasValue
+                    ? GetStreamerVolume(
+                        channel,
+                        output.Value)
+                    : GetVolume(channel);
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "{0} volume after change: {1:P0}",
+                output.HasValue
+                    ? $"{channel} {output.Value}"
+                    : channel.ToString(),
+                verifiedVolume);
+
+            return Math.Abs(
+                    verifiedVolume - volume)
+                < VolumeVerificationTolerance;
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to set volume: {0}",
+                ex);
+
+            return false;
+        }
+    }
+
+    private bool SetMuteInternal(
+        SonarChannel channel,
+        StreamerOutput? output,
+        bool muted)
+    {
         if (string.IsNullOrWhiteSpace(sonarAddress))
             return false;
 
@@ -448,16 +899,55 @@ public class SonarClient
                     : "false";
 
             string url =
-                $"{sonarAddress}/volumeSettings/classic/" +
-                $"{apiChannel}/Mute/{value}";
+                output.HasValue
+                    ? BuildStreamerMuteUrl(
+                        apiChannel,
+                        output.Value,
+                        value)
+                    : BuildClassicMuteUrl(
+                        apiChannel,
+                        value);
 
-            MacroDeckLogger.Information(
+            if (output.HasValue)
+            {
+                MacroDeckLogger.Information(
+                    plugin,
+                    "Setting {0} {1} mute to {2}",
+                    channel,
+                    output.Value,
+                    muted);
+            }
+            else
+            {
+                MacroDeckLogger.Information(
+                    plugin,
+                    "Setting {0} mute to {1}",
+                    channel,
+                    muted);
+            }
+
+            if (!SendPutRequest(url))
+                return false;
+
+            Thread.Sleep(
+                VolumeUpdateDelayMilliseconds);
+
+            bool verifiedMuted =
+                output.HasValue
+                    ? GetStreamerMute(
+                        channel,
+                        output.Value)
+                    : GetMute(channel);
+
+            MacroDeckLogger.Debug(
                 plugin,
-                "Setting {0} mute to {1}",
-                channel,
-                muted);
+                "{0} mute state after change: {1}",
+                output.HasValue
+                    ? $"{channel} {output.Value}"
+                    : channel.ToString(),
+                verifiedMuted);
 
-            return SendPutRequest(url);
+            return verifiedMuted == muted;
         }
         catch (Exception ex)
         {
@@ -468,26 +958,6 @@ public class SonarClient
 
             return false;
         }
-    }
-
-    public bool ToggleMute(
-        SonarChannel channel)
-    {
-        SonarChannelState? state =
-            GetChannelState(channel);
-
-        if (state == null)
-            return false;
-
-        MacroDeckLogger.Information(
-            plugin,
-            "{0} mute state: {1}",
-            channel,
-            state.Muted);
-
-        return SetMute(
-            channel,
-            !state.Muted);
     }
 
     private bool SendPutRequest(
@@ -527,6 +997,83 @@ public class SonarClient
 
             return false;
         }
+    }
+
+    private string BuildClassicVolumeUrl(
+        string apiChannel,
+        string value)
+    {
+        return
+            $"{sonarAddress}/volumeSettings/classic/" +
+            $"{apiChannel}/Volume/{value}";
+    }
+
+    private string BuildClassicMuteUrl(
+        string apiChannel,
+        string value)
+    {
+        return
+            $"{sonarAddress}/volumeSettings/classic/" +
+            $"{apiChannel}/Mute/{value}";
+    }
+
+    private string BuildStreamerVolumeUrl(
+        string apiChannel,
+        StreamerOutput output,
+        string value)
+    {
+        string apiOutput =
+            GetStreamerOutputApiName(output);
+
+        return
+            $"{sonarAddress}/volumeSettings/streamer/" +
+            $"{apiOutput}/{apiChannel}/volume/{value}";
+    }
+
+    private string BuildStreamerMuteUrl(
+        string apiChannel,
+        StreamerOutput output,
+        string value)
+    {
+        string apiOutput =
+            GetStreamerOutputApiName(output);
+
+        return
+            $"{sonarAddress}/volumeSettings/streamer/" +
+            $"{apiOutput}/{apiChannel}/isMuted/{value}";
+    }
+
+    private static string GetStreamerOutputApiName(
+        StreamerOutput output)
+    {
+        return output switch
+        {
+            StreamerOutput.Streaming =>
+                "streaming",
+
+            StreamerOutput.Monitoring =>
+                "monitoring",
+
+            _ =>
+                throw new ArgumentOutOfRangeException(
+                    nameof(output),
+                    output,
+                    "Unsupported Streamer output.")
+        };
+    }
+
+    private static bool IsValidRedirectionChannel(
+        SonarChannel channel)
+    {
+        return channel switch
+        {
+            SonarChannel.Game => true,
+            SonarChannel.ChatRender => true,
+            SonarChannel.ChatCapture => true,
+            SonarChannel.Media => true,
+            SonarChannel.Aux => true,
+            _ => false
+        };
     }
 
     private static SonarChannelState CreateChannelState(
@@ -574,6 +1121,55 @@ public class SonarClient
                     nameof(channel),
                     channel,
                     "Unsupported Sonar channel.")
+        };
+    }
+
+    private static ClassicVolume GetStreamerVolumeState(
+        StreamerVolumeSettings settings,
+        SonarChannel channel,
+        StreamerOutput output)
+    {
+        StreamerVolumeOutputs outputs =
+            channel switch
+            {
+                SonarChannel.Master =>
+                    settings.Masters.Stream,
+
+                SonarChannel.Game =>
+                    settings.Devices.Game.Stream,
+
+                SonarChannel.ChatRender =>
+                    settings.Devices.ChatRender.Stream,
+
+                SonarChannel.ChatCapture =>
+                    settings.Devices.ChatCapture.Stream,
+
+                SonarChannel.Media =>
+                    settings.Devices.Media.Stream,
+
+                SonarChannel.Aux =>
+                    settings.Devices.Aux.Stream,
+
+                _ =>
+                    throw new ArgumentOutOfRangeException(
+                        nameof(channel),
+                        channel,
+                        "Unsupported Sonar channel.")
+            };
+
+        return output switch
+        {
+            StreamerOutput.Streaming =>
+                outputs.Streaming,
+
+            StreamerOutput.Monitoring =>
+                outputs.Monitoring,
+
+            _ =>
+                throw new ArgumentOutOfRangeException(
+                    nameof(output),
+                    output,
+                    "Unsupported Streamer output.")
         };
     }
 }
