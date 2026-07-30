@@ -85,6 +85,7 @@ public sealed class SonarMonitor : IDisposable
             UpdateChatMixVariables();
             UpdateStreamerVariables();
             UpdateRedirectionVariables();
+            UpdateStreamMonitoringVariable();
 
             MacroDeckLogger.Debug(
                 plugin,
@@ -183,6 +184,25 @@ public sealed class SonarMonitor : IDisposable
             plugin,
             "{0}",
             "Sonar monitor received no redirection states");
+    }
+
+    private void UpdateStreamMonitoringVariable()
+    {
+        bool? enabled =
+            sonar.GetStreamMonitoringEnabled();
+
+        if (enabled.HasValue)
+        {
+            variables.UpdateStreamMonitoringVariable(
+                enabled.Value);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no stream monitoring state");
     }
 
     public void Dispose()

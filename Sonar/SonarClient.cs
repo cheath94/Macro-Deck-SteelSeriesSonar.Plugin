@@ -223,6 +223,100 @@ public class SonarClient
         }
     }
 
+    public bool? GetStreamMonitoringEnabled()
+    {
+        if (string.IsNullOrWhiteSpace(sonarAddress))
+        {
+            return null;
+        }
+
+        try
+        {
+            string url =
+                $"{sonarAddress}/streamRedirections/" +
+                "isStreamMonitoringEnabled";
+
+            string json =
+                httpClient
+                    .GetStringAsync(url)
+                    .GetAwaiter()
+                    .GetResult();
+
+            MacroDeckLogger.Debug(
+                plugin,
+                "Stream monitoring JSON: {0}",
+                json);
+
+            return JsonSerializer.Deserialize<bool>(
+                json,
+                JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to read stream monitoring state: {0}",
+                ex);
+
+            return null;
+        }
+    }
+
+    public bool ToggleStreamMonitoring()
+    {
+        bool? enabled =
+            GetStreamMonitoringEnabled();
+
+        if (!enabled.HasValue)
+        {
+            MacroDeckLogger.Warning(
+                plugin,
+                "{0}",
+                "Unable to determine stream monitoring state.");
+
+            return false;
+        }
+
+        try
+        {
+            string value =
+                enabled.Value
+                    ? "false"
+                    : "true";
+
+            string url =
+                $"{sonarAddress}/streamRedirections/" +
+                $"isStreamMonitoringEnabled/{value}";
+
+            MacroDeckLogger.Information(
+                plugin,
+                "Setting stream monitoring to {0}",
+                !enabled.Value);
+
+            if (!SendPutRequest(url))
+            {
+                return false;
+            }
+
+            Thread.Sleep(
+                VolumeUpdateDelayMilliseconds);
+
+            bool? verified =
+                GetStreamMonitoringEnabled();
+
+            return verified == !enabled.Value;
+        }
+        catch (Exception ex)
+        {
+            MacroDeckLogger.Error(
+                plugin,
+                "Unable to toggle stream monitoring: {0}",
+                ex);
+
+            return false;
+        }
+    }
+
     public ChatMix? GetChatMix()
     {
         if (string.IsNullOrWhiteSpace(sonarAddress))

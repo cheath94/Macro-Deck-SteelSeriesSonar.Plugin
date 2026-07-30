@@ -26,7 +26,7 @@ channels and react to Sonar's current state using Macro Deck variables.
 - Increase or decrease channel volume
 - Mute, unmute, and toggle channel mute
 - Set, Increase, or Decrease the ChatMix
-- Works with Streamer mode
+- Works with Streamer mode (all channels, output redirections, stream monitoring)
 - Automatic Macro Deck variable updates
 - Dynamic button state support for mute status
 - Uses the local SteelSeries Sonar API
@@ -52,19 +52,20 @@ channels and react to Sonar's current state using Macro Deck variables.
 
 ## Available actions
 
-| Action                    | Description                               |
-|---------------------------|-------------------------------------------|
-| Set Sonar Volume          | Set Channel to specific volume            |
-| Adjust Sonar Volume       | Increase or decrease volume               |  
-| Mute Sonar Channel        | Mute a channel                            |
-| Unmute Sonar Channel      | Unmute a channel                          |
-| Toggle Sonar Mute         | Toggle a mute state                       |
-| Set ChatMix		        | Set ChatMix to specific level             |
-| Adjust ChatMix	        | Adjust Chatmix Level %		            |
-| Set Streamer Volume       | Set specific volume (stream mode)         |
-| Adjust Streamer Volume    | Increase or decrease volume (Stream mode) |
-| Toggle Streamer Mute      | Toggle a mute State (Stream mode)         |
-| Toggle Stream Redirection | Toggle stream routing (Stream mode)       |
+| Action                          | Description                               |
+|---------------------------------|-------------------------------------------|
+| Set Sonar Volume                | Set Channel to specific volume            |
+| Adjust Sonar Volume             | Increase or decrease volume               |  
+| Mute Sonar Channel              | Mute a channel                            |
+| Unmute Sonar Channel            | Unmute a channel                          |
+| Toggle Sonar Mute               | Toggle a mute state                       |
+| Set ChatMix		              | Set ChatMix to specific level             |
+| Adjust ChatMix	              | Adjust Chatmix Level %		              |
+| Set Streamer Volume             | Set specific volume (stream mode)         |
+| Adjust Streamer Volume          | Increase or decrease volume (Stream mode) |
+| Toggle Streamer Mute            | Toggle a mute State (Stream mode)         |
+| Toggle Stream Redirection       | Toggle stream routing (Stream mode)       |
+| Toggle Stream Output Monitoring | Toggle stream output monitoring           |
 
 	
 ## Available variables
@@ -90,6 +91,7 @@ channels and react to Sonar's current state using Macro Deck variables.
 | sonar_streaming_(channel)_volume          | Float (0.0-1)                 |
 | sonar_streaming_(channel)_volume_percent  | String (0-100)                |
 | sonar_streaming_(channel)_volume_text     | String (0-100)%               |
+| sonar_stream_monitoring_enabled           | Boolean                       |
 
 ## Supported Channels
 

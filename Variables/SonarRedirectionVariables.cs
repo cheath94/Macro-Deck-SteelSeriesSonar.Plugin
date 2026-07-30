@@ -87,4 +87,13 @@ public partial class SonarVariableManager
             }
         }
     }
+
+    public void UpdateStreamMonitoringVariable(
+        bool enabled)
+    {
+        SetVariableIfChanged(
+            "sonar_stream_monitoring_enabled",
+            enabled,
+            VariableType.Bool);
+    }
 }

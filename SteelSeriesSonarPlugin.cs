@@ -33,7 +33,8 @@ public class SteelSeriesSonarPlugin : MacroDeckPlugin
             new SetStreamerVolumeAction(),
             new AdjustStreamerVolumeAction(),
             new ToggleStreamerMuteAction(),
-            new ToggleStreamRedirectionAction()
+            new ToggleStreamRedirectionAction(),
+            new ToggleStreamMonitoringAction()
         ];
     }
 
