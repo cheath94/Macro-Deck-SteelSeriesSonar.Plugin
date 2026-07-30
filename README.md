@@ -26,6 +26,7 @@ channels and react to Sonar's current state using Macro Deck variables.
 - Increase or decrease channel volume
 - Mute, unmute, and toggle channel mute
 - Set, Increase, or Decrease the ChatMix
+- Works with Streamer mode (all channels, output redirections, stream monitoring)
 - Automatic Macro Deck variable updates
 - Dynamic button state support for mute status
 - Uses the local SteelSeries Sonar API
@@ -51,36 +52,46 @@ channels and react to Sonar's current state using Macro Deck variables.
 
 ## Available actions
 
-| Action               | Description                   |
-|----------------------|-------------------------------|
-| Set Sonar Volume     | Set Channel to specific volume|
-| Adjust Sonar Volume  | Increase or decrease volume   |  
-| Mute Sonar Channel   | Mute a channel                |
-| Unmute Sonar Channel | Unmute a channel              |
-| Toggle Sonar Mute    | Toggle a mute state           |
-| Set ChatMix		   | Set ChatMix to specific level |
-| Adjust ChatMix	   | Adjust Chatmix Level %		   |
+| Action                          | Description                               |
+|---------------------------------|-------------------------------------------|
+| Set Sonar Volume                | Set Channel to specific volume            |
+| Adjust Sonar Volume             | Increase or decrease volume               |  
+| Mute Sonar Channel              | Mute a channel                            |
+| Unmute Sonar Channel            | Unmute a channel                          |
+| Toggle Sonar Mute               | Toggle a mute state                       |
+| Set ChatMix		              | Set ChatMix to specific level             |
+| Adjust ChatMix	              | Adjust Chatmix Level %		              |
+| Set Streamer Volume             | Set specific volume (stream mode)         |
+| Adjust Streamer Volume          | Increase or decrease volume (Stream mode) |
+| Toggle Streamer Mute            | Toggle a mute State (Stream mode)         |
+| Toggle Stream Redirection       | Toggle stream routing (Stream mode)       |
+| Toggle Stream Output Monitoring | Toggle stream output monitoring           |
+
 	
 ## Available variables
 
-| Variables                  | Description                   |
-|----------------------------|-------------------------------|
-| sonar_master_volume        | Float (0.0 - 1.0)             |
-| sonar_master_muted         | Boolean                       |
-| sonar_game_volume          | Float (0.0 - 1.0)             |
-| sonar_game_muted           | Boolean                       |
-| sonar_chatrender_volume    | Float (0.0 - 1.0)             |
-| sonar_chatrender_muted     | Boolean                       |
-| sonar_chatcapture_volume   | Float (0.0 - 1.0)             |
-| sonar_chatcapture_muted    | Boolean                       |
-| sonar_media_volume         | Float (0.0 - 1.0)             |
-| sonar_media_muted          | Boolean                       |
-| sonar_aux_volume           | Float (0.0 - 1.0)             |
-| sonar_aux_muted            | Boolean                       |
-| sonar_chatmix_balance      | Float (-1 - 1)                |
-| sonar_chatmix_percent      | String (1 - 100)			     |
-| sonar_chatmix_side         | String (balanced/game/chat)   |
-| sonar_chatmix_text         | String (percent + side)       |
+| Variables                                 | Description                   |
+|-------------------------------------------|-------------------------------|
+| sonar_(channel)_volume                    | Float (0.0 - 1)               |
+| sonar_(channel)_muted                     | Boolean                       |
+| sonar_(channel)_volume_percent            | String (0-100)                |
+| sonar_(channel)_volume_text               | String (0-100)%               |
+| sonar_any_muted                           | Boolean                       |
+| sonar_chatmix_balance                     | Float (-1 - 1)                |
+| sonar_chatmix_percent                     | String (1 - 100)			    |
+| sonar_chatmix_side                        | String (balanced/game/chat)   |
+| sonar_chatmix_text                        | String (percent + side)       |
+| sonar_monitoring_(channel)_muted          | Boolean                       |
+| sonar_monitoring_(channel)_redirected     | Boolean                       |
+| sonar_monitroing_(channel)_volume         | Float (0.0-1)                 |
+| sonar_monitoring_(channel)_volume_percent | String (0-100)                |
+| sonar_monitoring_(channel)_volume_text    | String (0-100)%               |
+| sonar_streaming_(channel)_muted           | Boolean                       |
+| sonar_streaming_(channel)_redirected      | Boolean                       |
+| sonar_streaming_(channel)_volume          | Float (0.0-1)                 |
+| sonar_streaming_(channel)_volume_percent  | String (0-100)                |
+| sonar_streaming_(channel)_volume_text     | String (0-100)%               |
+| sonar_stream_monitoring_enabled           | Boolean                       |
 
 ## Supported Channels
 
@@ -125,12 +136,11 @@ dotnet build --configuration Release
 
 ### Plugin loads but actions fail
 
-- Ensure Sonar is not running in Streamer Mode.
+- Ensure Sonar is not running.
 
 ## Known limitations
 
-- Streamer Mode is currently not supported.
-- The plugin communicates with the local Sonar API, which may change between SteelSeries GG    releases.
+- The plugin communicates with the local Sonar API, which may change between SteelSeries GG releases.
 
 ## License
 

@@ -81,37 +81,11 @@ public sealed class SonarMonitor : IDisposable
                 return;
             }
 
-            Dictionary<SonarChannel, SonarChannelState> states =
-                sonar.GetAllChannelStates();
-
-            if (states.Count > 0)
-            {
-                variables.UpdateVariables(
-                    states);
-            }
-            else
-            {
-                MacroDeckLogger.Debug(
-                    plugin,
-                    "{0}",
-                    "Sonar monitor received no channel states");
-            }
-
-            ChatMix? chatMix =
-                sonar.GetChatMix();
-
-            if (chatMix is not null)
-            {
-                variables.UpdateChatMixVariables(
-                    chatMix);
-            }
-            else
-            {
-                MacroDeckLogger.Debug(
-                    plugin,
-                    "{0}",
-                    "Sonar monitor received no ChatMix state");
-            }
+            UpdateClassicVariables();
+            UpdateChatMixVariables();
+            UpdateStreamerVariables();
+            UpdateRedirectionVariables();
+            UpdateStreamMonitoringVariable();
 
             MacroDeckLogger.Debug(
                 plugin,
@@ -131,6 +105,104 @@ public sealed class SonarMonitor : IDisposable
                 ref pollInProgress,
                 0);
         }
+    }
+
+    private void UpdateClassicVariables()
+    {
+        Dictionary<SonarChannel, SonarChannelState> states =
+            sonar.GetAllChannelStates();
+
+        if (states.Count > 0)
+        {
+            variables.UpdateVariables(
+                states);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no Classic channel states");
+    }
+
+    private void UpdateChatMixVariables()
+    {
+        ChatMix? chatMix =
+            sonar.GetChatMix();
+
+        if (chatMix is not null)
+        {
+            variables.UpdateChatMixVariables(
+                chatMix);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no ChatMix state");
+    }
+
+    private void UpdateStreamerVariables()
+    {
+        Dictionary<
+            (StreamerOutput Output, SonarChannel Channel),
+            ClassicVolume> states =
+                sonar.GetAllStreamerChannelStates();
+
+        if (states.Count > 0)
+        {
+            variables.UpdateStreamerVariables(
+                states);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no Streamer channel states");
+    }
+
+    private void UpdateRedirectionVariables()
+    {
+        List<StreamRedirection>? redirections =
+            sonar.GetStreamRedirections();
+
+        if (redirections is not null &&
+            redirections.Count > 0)
+        {
+            variables.UpdateRedirectionVariables(
+                redirections);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no redirection states");
+    }
+
+    private void UpdateStreamMonitoringVariable()
+    {
+        bool? enabled =
+            sonar.GetStreamMonitoringEnabled();
+
+        if (enabled.HasValue)
+        {
+            variables.UpdateStreamMonitoringVariable(
+                enabled.Value);
+
+            return;
+        }
+
+        MacroDeckLogger.Debug(
+            plugin,
+            "{0}",
+            "Sonar monitor received no stream monitoring state");
     }
 
     public void Dispose()

@@ -29,7 +29,12 @@ public class SteelSeriesSonarPlugin : MacroDeckPlugin
             new MuteSonarChannelAction(),
             new UnmuteSonarChannelAction(),
             new SetChatMixAction(),
-            new AdjustChatMixAction()
+            new AdjustChatMixAction(),
+            new SetStreamerVolumeAction(),
+            new AdjustStreamerVolumeAction(),
+            new ToggleStreamerMuteAction(),
+            new ToggleStreamRedirectionAction(),
+            new ToggleStreamMonitoringAction()
         ];
     }
 
